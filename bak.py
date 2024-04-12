@@ -7,13 +7,6 @@ from itertools import combinations
 from tkinter import messagebox, Button, PhotoImage, Label
 
 
-# import networkx as nx
-# import matplotlib.pyplot as plt
-# from itertools import combinations
-# import tkinter as tk
-# from tkinter import messagebox, Button, PhotoImage, Label
-
-
 class GraphApp:
     def __init__(self, root):
         self.enter_edges = None
@@ -26,14 +19,24 @@ class GraphApp:
         self.canvas = tk.Canvas(self.root, width=400, height=400)
         self.canvas.pack()
 
-        self.nodes = {}  # To store node IDs and coordinates
+        self.positions = []
+        self.nodes = []  # To store node IDs and coordinates
         self.edges = []  # To store edge IDs
 
         img = PhotoImage(file='C:\\Users\\Tima\\Desktop\\Bakalarka\\Práca\\new_graph.png')
         self.canvas.create_image(200, 200, image=img, tags="image_button1")
         self.canvas.tag_bind("image_button1", "<Button-1>", self.new_graph)
+        self.canvas.bind('<B1-Motion>', self.move)
+        self.canvas.bind('<ButtonPress>', self.klik)
 
         self.root.mainloop()
+
+    def klik(self, event):
+        # print(event.x, event.y)
+        ...
+
+    def move(self, event):
+        ...
 
     def button_click(self, a):
         if self.enter_nodes.get() == "":
@@ -61,14 +64,9 @@ class GraphApp:
         self.enter_nodes.destroy()
         self.enter_edges.destroy()
 
-        # print(nodes)
-        # print(edges)
-
         nodes = nodes.split(",")
         for i in range(len(nodes)):
             nodes[i] = int(nodes[i])
-
-        # print(nodes)
 
         edges = edges.split()
 
@@ -78,35 +76,51 @@ class GraphApp:
             edges[i][1] = int(edges[i][1])
             edges[i] = tuple(edges[i])
 
-        # print(edges)
-
         g = nx.Graph()
         g.add_nodes_from(nodes)
         g.add_edges_from(edges)
-
-        print(g.nodes)
-        print(g.edges)
 
         if token:
             g = self.to_token(g)
 
         self.draw(g)
 
-    def draw(self, g):
+    def draw1(self, g):
         p = nx.spring_layout(g)
+
         fig, ax = plt.subplots(figsize=(4, 4))
         nx.draw(g, p, ax=ax, with_labels=True, node_size=700, node_color='skyblue', font_size=12, font_weight='bold',
                 width=2)
 
-        # Create a canvas widget from the matplotlib figure
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas.draw()
 
-        # Add the canvas to the Tkinter window
         canvas.get_tk_widget().place(x=0, y=0)
 
+    def draw(self, g):
+        layout = nx.spring_layout(g, seed=42)
+
+        for node in g.nodes():
+            x, y = layout[node]
+            self.positions.append((x * 150 + 150, y * 150 + 150))
+            self.nodes.append(node)
+
+        self.edges = list(g.edges)
+
+        for x, y in self.edges:
+            x = self.positions[self.nodes.index(x)]
+            y = self.positions[self.nodes.index(y)]
+            self.canvas.create_line(x[0], x[1], y[0], y[1])
+
+        for i in range(len(self.nodes)):
+            pos = self.positions[i]
+            self.canvas.create_oval(pos[0] - 15, pos[1] - 15, pos[0] + 15, pos[1] + 15, fill="#50a5fa", outline="")
+            self.canvas.create_text(pos[0], pos[1], text=str(self.nodes[i]), font=("Arial", 12), fill="black")
+
+        self.root.mainloop()
+
     def new_graph(self, a):
-        print(a)
+        # print(a)
         self.canvas.delete('all')
         custom_font = ('Arial', 12)
         self.nodes_label = tk.Label(font=custom_font, text='Enter nodes:')
@@ -123,11 +137,12 @@ class GraphApp:
         # enter_edges.place(x=20, y=130)
 
         img1 = PhotoImage(file='C:\\Users\\Tima\\Desktop\\Bakalarka\\Práca\\create_graph.png')
-        self.canvas.create_image(20+img1.width()/2, 230+img1.height()/2, image=img1, tags="button1")
+        self.canvas.create_image(20 + img1.width() / 2, 230 + img1.height() / 2, image=img1, tags="button1")
         self.canvas.tag_bind("button1", "<Button-1>", self.button_click)
 
         img2 = PhotoImage(file='C:\\Users\\Tima\\Desktop\\Bakalarka\\Práca\\create_token_graph.png')
-        self.canvas.create_image(20+img1.width()+img2.width()/2, 230+img2.height()/2, image=img2, tags="button2")
+        self.canvas.create_image(20 + img1.width() + img2.width() / 2, 230 + img2.height() / 2, image=img2,
+                                 tags="button2")
         self.canvas.tag_bind("button2", "<Button-1>", self.button_click_token)
 
         self.root.mainloop()
@@ -148,8 +163,8 @@ class GraphApp:
                     if g.has_edge(diff.pop(), diff.pop()):
                         token.add_edge(nodes1, nodes2)
 
-        print(len(list(token.edges)))
-        print(list(token.edges))
+        # print(len(list(token.edges)))
+        # print(list(token.edges))
 
         return token
 
@@ -165,7 +180,6 @@ if __name__ == "__main__":
     r = tk.Tk()
     app = GraphApp(r)
     app.run()
-
 
 # print(list(combinations([1, 2, 3, 4, 5, 6], 3)))
 #
